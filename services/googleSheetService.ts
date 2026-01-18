@@ -36,7 +36,6 @@ async function apiRequest(method: 'GET' | 'POST', payload?: any) {
     try {
       json = JSON.parse(text);
     } catch (e) {
-      // Return safe object if parsing fails (likely plain text error from GAS)
       console.warn("Raw Server Response:", text);
       return { status: 'error', message: 'Failed to parse server data' };
     }
@@ -106,15 +105,19 @@ export async function updateVisitor(visitor: Visitor): Promise<boolean> {
   if (!visitor.id) return false;
   try {
     const safeCheckIn = visitor.checkInTime instanceof Date ? visitor.checkInTime : new Date(visitor.checkInTime);
-    const result = await apiRequest('POST', {
+    
+    // หากสถานะเป็น IN ให้ส่ง checkOutTime เป็น null เพื่อล้างค่าในชีต
+    const payload = {
       action: 'update',
       data: {
         ...visitor,
         id: String(visitor.id),
         checkInTime: safeCheckIn.toISOString(),
-        checkOutTime: visitor.checkOutTime ? new Date(visitor.checkOutTime).toISOString() : undefined
+        checkOutTime: (visitor.status === 'IN') ? null : (visitor.checkOutTime ? new Date(visitor.checkOutTime).toISOString() : null)
       }
-    });
+    };
+
+    const result = await apiRequest('POST', payload);
     return !!(result && result.status === 'success');
   } catch (error) {
     return false;

@@ -25,7 +25,8 @@ import {
   Maximize2,
   ChevronDown,
   History,
-  CheckCircle2
+  CheckCircle2,
+  RotateCcw
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Visitor, VillageStats, FALLBACK_HOUSES } from './types';
@@ -94,7 +95,7 @@ const CustomTooltip = ({ active, payload, isDark }: any) => {
 };
 
 const ImageModal = ({ imageUrl, onClose }: { imageUrl: string; onClose: () => void }) => (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
+  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300" onClose={onClose}>
     <button className="absolute top-6 right-6 p-4 bg-white/10 hover:bg-white/20 rounded-full transition-all z-[110] active:scale-90" onClick={onClose}>
       <X className="w-8 h-8 text-white" />
     </button>
@@ -114,8 +115,16 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
     setIsEditing(false);
   };
 
+  const handleRestore = () => {
+    setEditData({
+      ...editData,
+      status: 'IN',
+      checkOutTime: undefined
+    });
+  };
+
   return (
-    <div className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'} border-2 p-6 rounded-[2.5rem] transition-all duration-300 hover:shadow-xl ${isOut ? 'opacity-95' : ''}`}>
+    <div className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'} border-2 p-6 rounded-[2.5rem] transition-all duration-300 hover:shadow-xl ${isOut && !isEditing ? 'opacity-95' : ''}`}>
       {isEditing ? (
         <div className="space-y-4 mb-5">
           <div className="flex justify-between items-center">
@@ -157,6 +166,15 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
               </select>
             </div>
           </div>
+
+          {editData.status === 'OUT' && (
+            <button 
+              onClick={handleRestore}
+              className={`w-full py-3 ${isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border-emerald-200'} border-2 border-dashed rounded-2xl font-black text-xs flex items-center justify-center gap-2 uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all`}
+            >
+              <RotateCcw className="w-4 h-4" /> ดึงกลับมาเป็นสถานะ "อยู่ข้างใน (Active)"
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex justify-between items-start mb-5">
@@ -183,13 +201,11 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
               </p>
             </div>
           </div>
-          {!isOut && (
-            <div className="flex gap-1 ml-2">
-              <button disabled={isLoading} onClick={() => setIsEditing(true)} className={`${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-400 hover:text-emerald-500'} p-2.5 hover:bg-emerald-500/10 rounded-2xl transition-all disabled:opacity-30`}>
-                <Edit2 className="w-6 h-6" />
-              </button>
-            </div>
-          )}
+          <div className="flex gap-1 ml-2">
+            <button disabled={isLoading} onClick={() => setIsEditing(true)} className={`${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-400 hover:text-emerald-500'} p-2.5 hover:bg-emerald-500/10 rounded-2xl transition-all disabled:opacity-30`}>
+              <Edit2 className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       )}
       
@@ -203,7 +219,7 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
           )}
         </div>
         
-        <div className={`grid ${isOut ? 'grid-cols-2 gap-4' : 'grid-cols-1'} border-t pt-5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className={`grid ${visitor.status === 'OUT' || (isEditing && editData.status === 'OUT') ? 'grid-cols-2 gap-4' : 'grid-cols-1'} border-t pt-5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
           <div className="space-y-1">
             <span className={`text-[10px] font-black block uppercase tracking-tighter ${isDark ? 'text-emerald-400' : 'text-slate-400'}`}>CHECK-IN</span>
             <p className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -211,7 +227,7 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
             </p>
           </div>
           
-          {isOut && visitor.checkOutTime && (
+          {(visitor.status === 'OUT' || (isEditing && editData.status === 'OUT')) && visitor.checkOutTime && (
             <div className="space-y-1">
               <span className={`text-[10px] font-black block uppercase tracking-tighter ${isDark ? 'text-rose-400' : 'text-slate-400'}`}>DEPARTED</span>
               <p className={`font-black text-lg ${isDark ? 'text-rose-300' : 'text-rose-600'}`}>
@@ -224,13 +240,13 @@ const VisitorItem = ({ visitor, onCheckOut, onUpdate, onImageClick, isDark, isLo
         <div className={`flex justify-between items-center border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
           <span className={`font-black uppercase tracking-widest text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>ระยะเวลา:</span>
           <span className={`font-black text-lg ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-            {calculateDuration(visitor.checkInTime, visitor.checkOutTime)}
+            {calculateDuration(visitor.checkInTime, visitor.status === 'OUT' ? visitor.checkOutTime : undefined)}
           </span>
         </div>
       </div>
 
       {!isOut ? (
-        <button disabled={isLoading} onClick={() => onCheckOut(visitor.id)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 text-base tracking-widest uppercase">
+        <button disabled={isLoading || isEditing} onClick={() => onCheckOut(visitor.id)} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black transition-all shadow-lg shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 text-base tracking-widest uppercase">
           {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <LogOut className="w-6 h-6" />} บันทึกออก
         </button>
       ) : (
@@ -675,7 +691,7 @@ export default function App() {
       {selectedImage && <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />}
 
       <footer className={`py-8 text-center text-[10px] font-black uppercase tracking-[5px] opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-900'} relative z-10`}>
-        SMART VILLAGE GUARD • SECURE PROTOCOL V4.7.8
+        SMART VILLAGE GUARD • SECURE PROTOCOL V4.8.0
       </footer>
 
       {showNotification.show && (
