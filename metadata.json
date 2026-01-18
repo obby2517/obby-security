@@ -1,0 +1,7 @@
+{
+  "name": "Security-SmartVillage- Visitor Management System",
+  "description": "A high-tech visitor management system for gated communities featuring AI-powered ID scanning, real-time dashboard, and seamless check-in/out tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
